@@ -1,7 +1,10 @@
 // @\components\ui\apiAlert.tsx
 "use client";
-import { Alert, AlertTitle } from "@/components/ui/alert";
-import { Server } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Copy, Server } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "./button";
+import toast from "react-hot-toast";
 
 interface ApiAlertProps {
   title: string;
@@ -22,13 +25,25 @@ export const ApiAlert: React.FC<ApiAlertProps> = ({
   description,
   variant = "public",
 }) => {
-  return(
+  const onCopy = () => {
+    navigator.clipboard.writeText(description);
+    toast.success("Api Route Copied to the clipboard");
+  };
+  return (
     <Alert>
-      <Server className="h-4 w-4"/>
+      <Server className="h-4 w-4" />
       <AlertTitle className="flex items-center gap-x-2">
-        { title }
-        
+        {title}
+        <Badge variant={"default"}>{textMap[variant]}</Badge>
       </AlertTitle>
+      <AlertDescription className="mt-4 flex items-center justify-between">
+        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+          {description}
+        </code>
+        <Button variant={"outline"} size={"icon"} onClick={onCopy}>
+          <Copy className="h-4 w-4" />
+        </Button>
+      </AlertDescription>
     </Alert>
-  )
+  );
 };

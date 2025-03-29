@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { AlertModal } from "@/components/modals/alertModal";
 import { ApiAlert } from "@/components/ui/apiAlert";
+import { UseOrigin } from "@/hooks/useOrigin";
 const formSchema = z.object({
   name: z.string().min(1),
 });
@@ -37,8 +38,10 @@ interface SettingsFormProps {
 export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
   const params = useParams();
   const router = useRouter();
+  const origin = UseOrigin();
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
@@ -61,8 +64,8 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
       setLoading(true);
       await axios.delete(`/api/stores/${params.storeId}`);
       router.refresh();
-      router.push("/")
-      toast.success("Store Delete")
+      router.push("/");
+      toast.success("Store Delete");
     } catch (err) {
       toast.error("Make Sure you removed all products and categories first");
     } finally {
@@ -120,7 +123,11 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
         </form>
       </Form>
       <Separator />
-      <ApiAlert title="test" description="test-desc" />
+      <ApiAlert
+        title="NEXT_PUBLIC_API_URL"
+        description={`${origin}/api/${params.storeId}`}
+        variant="public"
+      />
     </>
   );
 };
