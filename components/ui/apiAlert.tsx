@@ -3,7 +3,7 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Copy, Server } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
 interface ApiAlertProps {

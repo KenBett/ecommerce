@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
-import { Store } from "@prisma/client";
+import { Color } from "@prisma/client";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,35 +23,53 @@ import {
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { AlertModal } from "@/components/modals/alertModal";
-import { ApiAlert } from "@/components/ui/apiAlert";
-import { UseOrigin } from "@/hooks/useOrigin";
+
 const formSchema = z.object({
   name: z.string().min(1),
+  value: z.string().min(4).regex(/^#/, {
+    message: "String must be a valid hex form",
+  }),
 });
 
-type SettingsFormValues = z.infer<typeof formSchema>;
+type ColorFormValues = z.infer<typeof formSchema>;
 
-interface SettingsFormProps {
-  initialData: Store;
+interface ColorFormProps {
+  initialData: Color | null;
 }
 
-export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
+export const ColorForm: React.FC<ColorFormProps> = ({ initialData }) => {
   const params = useParams();
   const router = useRouter();
-  const origin = UseOrigin();
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const form = useForm<SettingsFormValues>({
+  const title = initialData ? "Edit Color" : "Create Color";
+  const description = initialData ? "Edit Color" : "Add New Color";
+  const toastMessage = initialData ? "Color Updated" : "Color Created";
+  const action = initialData ? "Save Changes" : "Create";
+
+  const form = useForm<ColorFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData,
+    defaultValues: initialData || {
+      name: "",
+      value: "",
+    },
   });
-  const onSubmit = async (data: SettingsFormValues) => {
+
+  const onSubmit = async (data: ColorFormValues) => {
     try {
       setLoading(true);
-      await axios.patch(`/api/stores/${params.storeId}`, data);
+      if (initialData) {
+        await axios.patch(
+          `/api/${params.storeId}/colors/${params.colorId}`,
+          data
+        );
+      } else {
+        await axios.post(`/api/${params.storeId}/colors`, data);
+      }
       router.refresh();
-      toast.success("Store Updated");
+      router.push(`/${params.storeId}/colors`);
+      toast.success(toastMessage);
     } catch (err) {
       toast.error("Something Went Wrong");
     } finally {
@@ -62,12 +80,12 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
   const onDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`/api/stores/${params.storeId}`);
+      await axios.delete(`/api/${params.storeId}/colors/${params.colorId}`);
       router.refresh();
-      router.push("/");
-      toast.success("Store Deleted");
+      router.push(`/${params.storeId}/colors`);
+      toast.success("Color Deleted");
     } catch (err) {
-      toast.error("Make Sure you removed all products and categories first");
+      toast.error("Make Sure you removed all products using this color first");
     } finally {
       setLoading(false);
       setOpen(false);
@@ -82,15 +100,17 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
         loading={loading}
       />
       <div className="flex items-center justify-between">
-        <Heading title="Settings" description="Manage Store Preferences" />
-        <Button
-          disabled={loading}
-          variant={"destructive"}
-          size={"icon"}
-          onClick={() => setOpen(true)}
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
+        <Heading title={title} description={description} />
+        {initialData && (
+          <Button
+            disabled={loading}
+            variant={"destructive"}
+            size={"icon"}
+            onClick={() => setOpen(true)}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <Separator />
       <Form {...form}>
@@ -108,7 +128,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
                   <FormControl>
                     <Input
                       disabled={loading}
-                      placeholder="Store Name"
+                      placeholder="Color name"
                       {...field}
                     />
                   </FormControl>
@@ -116,18 +136,36 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Value</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-x-4">
+                      <Input
+                        disabled={loading}
+                        placeholder="Color Value"
+                        {...field}
+                      />
+                      <div
+                        className="border p-4 rounded-full"
+                        style={{ backgroundColor: field.value }}
+                       />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           <Button disabled={loading} className="ml-auto" type="submit">
-            Save Changes
+            {action}
           </Button>
         </form>
       </Form>
       <Separator />
-      <ApiAlert
-        title="NEXT_PUBLIC_API_URL"
-        description={`${origin}/api/${params.storeId}`}
-        variant="public"
-      />
     </>
   );
 };

@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
 import {
   ClerkProvider,
-  UserButton,
 } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 import { ModalProvider } from "@/providers/modalProvider";
 import { ToastProvider } from "@/providers/toastProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+
+const robotoMono = Roboto({
   subsets: ["latin"],
+  weight: ["400"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Admin Dashboard",
@@ -32,7 +28,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased p-2`}
+          className={`${robotoMono.className} antialiased`}
         >
           <ToastProvider />
           <ModalProvider />

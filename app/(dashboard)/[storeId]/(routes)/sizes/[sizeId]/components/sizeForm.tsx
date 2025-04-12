@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
-import { Store } from "@prisma/client";
+import { Size } from "@prisma/client";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,35 +23,54 @@ import {
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { AlertModal } from "@/components/modals/alertModal";
-import { ApiAlert } from "@/components/ui/apiAlert";
-import { UseOrigin } from "@/hooks/useOrigin";
+import ImageUpload from "@/components/ui/imageUpload";
+
 const formSchema = z.object({
   name: z.string().min(1),
+  value: z.string().min(1),
 });
 
-type SettingsFormValues = z.infer<typeof formSchema>;
+type SizeFormValues = z.infer<typeof formSchema>;
 
-interface SettingsFormProps {
-  initialData: Store;
+interface SizeFormProps {
+  initialData: Size | null;
 }
 
-export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
+export const SizeForm: React.FC<SizeFormProps> = ({
+  initialData,
+}) => {
   const params = useParams();
   const router = useRouter();
-  const origin = UseOrigin();
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const form = useForm<SettingsFormValues>({
+  const title = initialData ? "Edit Size" : "Create Size";
+  const description = initialData ? "Edit Size" : "Add New Size";
+  const toastMessage = initialData ? "Size Updated" : "Size Created";
+  const action = initialData ? "Save Changes" : "Create";
+
+  const form = useForm<SizeFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData,
+    defaultValues: initialData || {
+      name: "",
+      value: "",
+    },
   });
-  const onSubmit = async (data: SettingsFormValues) => {
+
+  const onSubmit = async (data: SizeFormValues) => {
     try {
       setLoading(true);
-      await axios.patch(`/api/stores/${params.storeId}`, data);
+      if (initialData) {
+        await axios.patch(
+          `/api/${params.storeId}/sizes/${params.sizeId}`,
+          data
+        );
+      } else {
+        await axios.post(`/api/${params.storeId}/sizes`, data);
+      }
       router.refresh();
-      toast.success("Store Updated");
+      router.push(`/${params.storeId}/sizes`);
+      toast.success(toastMessage);
     } catch (err) {
       toast.error("Something Went Wrong");
     } finally {
@@ -62,12 +81,14 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
   const onDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`/api/stores/${params.storeId}`);
+      await axios.delete(
+        `/api/${params.storeId}/sizes/${params.sizeId}`
+      );
       router.refresh();
-      router.push("/");
-      toast.success("Store Deleted");
+      router.push(`/${params.storeId}/sizes`);
+      toast.success("Size Deleted");
     } catch (err) {
-      toast.error("Make Sure you removed all products and categories first");
+      toast.error("Make Sure you removed all products using this size first");
     } finally {
       setLoading(false);
       setOpen(false);
@@ -82,15 +103,17 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
         loading={loading}
       />
       <div className="flex items-center justify-between">
-        <Heading title="Settings" description="Manage Store Preferences" />
-        <Button
-          disabled={loading}
-          variant={"destructive"}
-          size={"icon"}
-          onClick={() => setOpen(true)}
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
+        <Heading title={title} description={description} />
+        {initialData && (
+          <Button
+            disabled={loading}
+            variant={"destructive"}
+            size={"icon"}
+            onClick={() => setOpen(true)}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <Separator />
       <Form {...form}>
@@ -108,7 +131,24 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
                   <FormControl>
                     <Input
                       disabled={loading}
-                      placeholder="Store Name"
+                      placeholder="Size name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Value</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Size Value"
                       {...field}
                     />
                   </FormControl>
@@ -118,16 +158,11 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({ initialData }) => {
             />
           </div>
           <Button disabled={loading} className="ml-auto" type="submit">
-            Save Changes
+            {action}
           </Button>
         </form>
       </Form>
       <Separator />
-      <ApiAlert
-        title="NEXT_PUBLIC_API_URL"
-        description={`${origin}/api/${params.storeId}`}
-        variant="public"
-      />
     </>
   );
 };
